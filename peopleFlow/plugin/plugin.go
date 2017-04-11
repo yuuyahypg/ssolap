@@ -5,8 +5,8 @@ import (
     "gopkg.in/sensorbee/sensorbee.v0/bql/udf"
 
     "github.com/yuuyahypg/ssolap/peopleFlow/sender"
-    "github.com/yuuyahypg/ssolap/sensorbee/newStreamGenerate"
-    "github.com/yuuyahypg/ssolap/sensorbee/sink"
+    "github.com/yuuyahypg/ssolap/sb/newStreamGenerate"
+    "github.com/yuuyahypg/ssolap/sb/sink"
 )
 
 func init() {

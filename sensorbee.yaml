@@ -1,0 +1,6 @@
+topologies:
+  peopleFlow:
+    bql_file: peopleFlow.bql
+
+network:
+  listen_on: ":15601"

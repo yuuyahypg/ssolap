@@ -1,0 +1,8 @@
+CREATE SINK olapServer TYPE sink;
+CREATE SOURCE sensorData TYPE sender;
+
+CREATE STREAM data AS
+    SELECT RSTREAM *
+    FROM joinDimension("sensorData") [RANGE 1 TUPLES];
+
+INSERT INTO olapServer FROM data;
