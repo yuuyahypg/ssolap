@@ -1,1 +1,4 @@
 /config
+/node_modules
+/.eslintrc.json
+bindata.go
