@@ -4,8 +4,9 @@ import MuiThemeProvider from 'material-ui/styles/MuiThemeProvider';
 import getMuiTheme from 'material-ui/styles/getMuiTheme';
 
 const ApplecationTheme = getMuiTheme({
+  userAgent: (typeof navigator !== 'undefined' && navigator.userAgent) || 'all',
   appBar: {
-    "background-color": tealA400,
+    "color": tealA400,
   },
 });
 

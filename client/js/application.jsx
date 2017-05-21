@@ -1,36 +1,41 @@
 import * as React from 'react';
+import { connect } from 'react-redux';
+import { Route, Switch } from 'react-router';
+import Helmet from 'react-helmet';
 import { AppBar } from 'material-ui';
 import injectTapEventPlugin from 'react-tap-event-plugin';
 import MuiThemeProvider from 'material-ui/styles/MuiThemeProvider';
+import routes from './routes.jsx';
 import ApplecationTheme from './applecation_theme.jsx';
 
-export default class App extends React.Component {
-  constructor(props) {
-    super(props);
-    this.state = {
-      message: '',
-    };
-  }
+injectTapEventPlugin();
 
-  componentDidMount() {
-    fetch('./api/home')
-    .then(x => x.json())
-    .then((json) => {
-      this.setState({
-        message: json.message,
-      });
-    });
-  }
-
+class App extends React.Component {
   render() {
-    const { message } = this.state;
     return (
-      <MuiThemeProvider muiTheme={ ApplecationTheme }>
-        <AppBar
-          title="Title"
-          iconClassNameRight="muidocs-icon-navigation-expand-more"
-        />
-      </MuiThemeProvider>
+      <div>
+        <MuiThemeProvider muiTheme={ ApplecationTheme }>
+          <AppBar
+            title="Title"
+            iconClassNameRight="muidocs-icon-navigation-expand-more"/>
+        </MuiThemeProvider>
+        { this.props.children }
+      </div>
     );
   }
 }
+
+App.propTypes = {};
+
+function mapStateToProps(state) {
+  return {};
+}
+
+function mapDispatchToProps(dispatch) {
+  return {};
+}
+
+export default connect(
+  mapStateToProps,
+  mapDispatchToProps,
+)(App);

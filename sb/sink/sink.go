@@ -5,19 +5,19 @@ import (
     "gopkg.in/sensorbee/sensorbee.v0/core"
     "gopkg.in/sensorbee/sensorbee.v0/data"
 
-    "github.com/yuuyahypg/ssolap/olap"
+    "github.com/yuuyahypg/ssolap/server"
 
     "fmt"
     //"time"
 )
 
 type Sink struct {
-    olapServer *olap.Server
+    server *server.Server
     count int
 }
 
 func (s *Sink) Write(ctx *core.Context, t *core.Tuple) error {
-    s.olapServer.RecieveTuple(t)
+    s.server.RecieveTuple(t)
     //s.count = s.count + 1
     //if s.count >= 100000 {
     //    fmt.Println(time.Now())
@@ -26,15 +26,15 @@ func (s *Sink) Write(ctx *core.Context, t *core.Tuple) error {
 }
 
 func (s *Sink) Close(ctx *core.Context) error {
-    s.olapServer.Close()
+    s.server.Close()
     return nil
 }
 
 func Create(ctx *core.Context, ioParams *bql.IOParams, params data.Map) (core.Sink, error) {
-    s := olap.NewServer()
+    s := server.Run()
     fmt.Println("success create server")
     return &Sink{
-        olapServer: s,
+        server: s,
         count: 0,
     }, nil
 }

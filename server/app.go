@@ -3,16 +3,21 @@ package server
 import (
 	"log"
 	"os"
+	//"fmt"
 
 	"html/template"
 	"net/http"
 	"strings"
 
+	"gopkg.in/sensorbee/sensorbee.v0/core"
 	"github.com/elazarl/go-bindata-assetfs"
 	"github.com/gin-gonic/contrib/renders/multitemplate"
 	"github.com/gin-gonic/contrib/static"
 	"github.com/gin-gonic/gin"
 	"github.com/nu7hatch/gouuid"
+
+	"github.com/yuuyahypg/ssolap/olap/conf"
+	"github.com/yuuyahypg/ssolap/olap/buffer"
 )
 
 type binaryFileSystem struct {
@@ -40,7 +45,23 @@ func BinaryFileSystem(root string) *binaryFileSystem {
 	}
 }
 
-func Run() {
+type Server struct {
+    Conf *conf.Conf
+    Buffer *buffer.RegisteredBuffer
+}
+
+func (s *Server) RecieveTuple(tuple *core.Tuple) {
+    s.Buffer.AddTuple(tuple)
+}
+
+func (s *Server) Close() {
+    s.Buffer.DeleteSchedule.Stop()
+}
+
+func Run() *Server {
+	config := conf.NewConf()
+	buf := buffer.NewRegisteredBuffer(config)
+
   r := gin.Default()
   r.HTMLRender = loadTemplates("react.html")
 
@@ -49,7 +70,7 @@ func Run() {
 		c.Set("uuid", id)
 	})
 
-  SetRoutes(r)
+  SetRoutes(r, config, buf)
 
   react := NewReact(
 		"assets/js/bundle.js",
@@ -66,6 +87,13 @@ func Run() {
 		port = "3000"
 	}
 	r.Run(":" + port)
+
+	server := &Server{
+			Conf: config,
+			Buffer: buf,
+	}
+
+	return server
 }
 
 func loadTemplates(list ...string) multitemplate.Render {

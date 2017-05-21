@@ -4,4 +4,11 @@ html {
 
 body {
   background-color: white;
+  margin: 0px;
+}
+
+.leaflet-container {
+  height: 400px;
+  width: 80%;
+  margin: 0 auto;
 }
