@@ -51,7 +51,7 @@ func NewRegisteredBuffer(config *conf.Conf) *RegisteredBuffer {
         Sum: sum,
         SumType: sType,
         topTime: time.Date(t.Year(), t.Month(), t.Day(), t.Hour(), t.Minute(), 0, 0, jst),
-        ioi: config.OlapConfig.Ioi,
+        ioi: config.Olap.Ioi,
         DeleteSchedule: c,
         mutex: new(sync.Mutex),
     }

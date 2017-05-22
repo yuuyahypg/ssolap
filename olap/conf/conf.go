@@ -8,10 +8,10 @@ type Conf struct {
     Ver *Vertices
     DimInfo *DimensionsInfo
     Query *RegisteredQuery
-    OlapConfig Olap
+    Olap OlapConfig
 }
 
-type Olap struct {
+type OlapConfig struct {
     Ioi int `toml:"ioi"`
 }
 
