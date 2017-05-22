@@ -156,13 +156,16 @@ func (rb *RegisteredBuffer) newTuple(query []string, tuple *core.Tuple) []interf
 
 // ioiを超えたデータを削除
 func (rb *RegisteredBuffer) deleteOutOfIoi() {
-    rb.mutex.Lock()
-    fmt.Println("delete")
+    fmt.Println("cron start")
+    fmt.Println(int(time.Now().In(jst).Sub(rb.topTime).Minutes()) % 60)
+    fmt.Println(rb.ioi)
     if (int(time.Now().In(jst).Sub(rb.topTime).Minutes()) % 60) >= rb.ioi {
+      rb.mutex.Lock()
+      fmt.Println("delete")
       for i, _ := range rb.RegiQuery.Query {
           rb.RegiBuff[i] = rb.RegiBuff[i][1:]
       }
       rb.topTime = rb.topTime.Add(time.Duration(1) * time.Minute)
+      rb.mutex.Unlock()
     }
-    rb.mutex.Unlock()
 }

@@ -61,10 +61,14 @@ func SetApiRequest(e *gin.Engine, js *simplejson.Json, conf *conf.Conf, buf *buf
           query.WriteString(";")
       }
 
-      result := buf.GetResult(query.String(), conf)
+      ob := buf.GetResult(query.String(), conf)
+      result := []map[string]interface{}{}
+      for _, tuple := range ob.Buffer {
+        result = append(result, tuple)
+      }
 
       c.JSON(200, gin.H{
-          "tuple": result,
+          "tuples": result,
       })
   })
 }
