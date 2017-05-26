@@ -87,7 +87,8 @@ func createDimensionMap(dimension map[string]interface{}) *DimensionTable {
     levels := dimension["levels"].([]interface{})
     length := len(levels)
 
-    df, err := os.Open("./config/dimensionLevels/" + dimension["name"].(string) + ".csv")
+    // df, err := os.Open("./config/dimensionLevels/" + dimension["name"].(string) + ".csv")
+    df, err := os.Open("./config/dimensionTables/" + dimension["name"].(string) + ".csv")
     if err != nil {
         fmt.Println("not exist dimension level file")
         panic(err)
@@ -105,13 +106,14 @@ func createDimensionMap(dimension map[string]interface{}) *DimensionTable {
         columns := map[string]string{}
 
         for i := 0; i < length; i++ {
-            columns[levels[i].(string)] = record[i]
+            //columns[levels[i].(string)] = record[i]
+            columns[levels[0].(string)] = record[1]
         }
 
         dimensionMap[record[0]] = columns
     }
     df.Close()
-
+    
     return &DimensionTable{
         table: dimensionMap,
     }

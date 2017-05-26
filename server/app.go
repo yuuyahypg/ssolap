@@ -86,7 +86,7 @@ func Run() *Server {
 	if len(port) == 0 {
 		port = "3000"
 	}
-	r.Run(":" + port)
+	go r.Run(":" + port)
 
 	server := &Server{
 			Conf: config,

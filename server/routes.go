@@ -1,6 +1,7 @@
 package server
 
 import (
+    "strconv"
     "bytes"
     "github.com/gin-gonic/gin"
     "github.com/bitly/go-simplejson"
@@ -24,6 +25,7 @@ func SetRoutes(e *gin.Engine, conf *conf.Conf, buf *buffer.RegisteredBuffer) {
     }
     SetApiDimensions(e, js)
     SetApiRequest(e, js, conf, buf)
+    SetApiGeometry(e)
 }
 
 func SetApiDimensions(e *gin.Engine, js *simplejson.Json) {
@@ -69,6 +71,21 @@ func SetApiRequest(e *gin.Engine, js *simplejson.Json, conf *conf.Conf, buf *buf
 
       c.JSON(200, gin.H{
           "tuples": result,
+      })
+  })
+}
+
+func SetApiGeometry(e *gin.Engine) {
+  db, _ := ConnectDB()
+  e.GET("/api/geometry", func(c *gin.Context) {
+      southWestLon, _ := strconv.ParseFloat(c.Query("southWestLon"), 64)
+      southWestLat, _ := strconv.ParseFloat(c.Query("southWestLat"), 64)
+      northEastLon, _ := strconv.ParseFloat(c.Query("northEastLon"), 64)
+      northEastLat, _ := strconv.ParseFloat(c.Query("northEastLat"), 64)
+
+      geo := db.GetBoundedArea(southWestLon, southWestLat, northEastLon, northEastLat)
+      c.JSON(200, gin.H{
+          "geojson": geo,
       })
   })
 }

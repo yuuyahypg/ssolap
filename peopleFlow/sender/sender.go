@@ -26,7 +26,6 @@ type Connector struct {
 }
 
 func (c *Connector) GenerateStream(ctx *core.Context, writer core.Writer) error {
-    fmt.Println("send start")
     // file open
     buffer := bytes.NewBufferString(c.dir)
     //buffer.WriteString("test.csv")
@@ -39,8 +38,8 @@ func (c *Connector) GenerateStream(ctx *core.Context, writer core.Writer) error 
     reader := csv.NewReader(file)
     time.Sleep(10 * time.Second)
 
-
-    fmt.Println(time.Now())
+    fmt.Println("send start")
+    //fmt.Println(time.Now())
     // read sensor data
     for {
         record, err := reader.Read()
@@ -99,7 +98,7 @@ func (s *SourceGetter) CreateSource(ctx *core.Context, ioParams *bql.IOParams, p
     }
 
     dir := strings.Replace(config.Source.Path,  "~", usr.HomeDir, 1)
-
+    fmt.Println(dir)
     src := &Connector{
       dir: dir,
     }

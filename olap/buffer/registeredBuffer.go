@@ -56,7 +56,7 @@ func NewRegisteredBuffer(config *conf.Conf) *RegisteredBuffer {
         mutex: new(sync.Mutex),
     }
 
-    fmt.Println("top time")
+    fmt.Println("top time is")
     fmt.Println(time.Date(t.Year(), t.Month(), t.Day(), t.Hour(), t.Minute(), 0, 0, jst))
 
     rb.DeleteSchedule.AddFunc("@every 1m", func() { rb.deleteOutOfIoi() })
@@ -94,7 +94,7 @@ func (rb *RegisteredBuffer) AddTuple(tuple *core.Tuple) {
             }
         } else {
             num := mins - len(rb.RegiBuff[i])
-            for i := 0; num >= i; i++ {
+            for j := 0; num >= j; j++ {
                 rb.RegiBuff[i] = append(rb.RegiBuff[i], map[string][]interface{}{})
             }
 
@@ -156,9 +156,6 @@ func (rb *RegisteredBuffer) newTuple(query []string, tuple *core.Tuple) []interf
 
 // ioiを超えたデータを削除
 func (rb *RegisteredBuffer) deleteOutOfIoi() {
-    fmt.Println("cron start")
-    fmt.Println(int(time.Now().In(jst).Sub(rb.topTime).Minutes()) % 60)
-    fmt.Println(rb.ioi)
     if (int(time.Now().In(jst).Sub(rb.topTime).Minutes()) % 60) >= rb.ioi {
       rb.mutex.Lock()
       fmt.Println("delete")
