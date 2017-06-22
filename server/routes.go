@@ -83,7 +83,16 @@ func SetApiGeometry(e *gin.Engine) {
       northEastLon, _ := strconv.ParseFloat(c.Query("northEastLon"), 64)
       northEastLat, _ := strconv.ParseFloat(c.Query("northEastLat"), 64)
 
-      geo := db.GetBoundedArea(southWestLon, southWestLat, northEastLon, northEastLat)
+      var geo *FeatureCollection
+      if c.Query("region") == "region2" {
+        geo = db.GetBoundedArea(southWestLon, southWestLat, northEastLon, northEastLat)
+      } else if c.Query("region") == "city" {
+        geo = db.GetBoundedAreaCity(southWestLon, southWestLat, northEastLon, northEastLat)
+      } else if c.Query("region") == "prefecture" {
+        geo = db.GetBoundedAreaPrefecture(southWestLon, southWestLat, northEastLon, northEastLat)
+      }
+
+
       c.JSON(200, gin.H{
           "geojson": geo,
       })

@@ -2,14 +2,16 @@ import * as React from 'react';
 import { connect } from 'react-redux';
 
 import DataMapValueSelector from './data_map_value_selector.jsx';
+import DataMap from './data_map.jsx';
 import * as actions from '../actions/data.jsx';
 
 class AnalysisMapCard extends React.Component {
   render() {
     console.log(this.props);
     return (
-      <div>
-        <DataMapValueSelector/>
+      <div style={ { marginTop: 10 } }>
+        <DataMapValueSelector className="col-xs-3"/>
+        <DataMap className="col-xs-9"/>
       </div>
     );
   }

@@ -2,6 +2,7 @@ import * as ActionTypes from '../actions/map.jsx';
 
 const initialState = {
   geometries: {},
+  margedGeometries: {},
   bounds: {
     northEast: {
       lon: 0,
@@ -12,6 +13,8 @@ const initialState = {
       lat: 0,
     },
   },
+  tuples: [],
+  max: 0,
 };
 
 const map = (state = initialState, action) => {
@@ -29,6 +32,25 @@ const map = (state = initialState, action) => {
             lon: action.bounds.southWestLon,
             lat: action.bounds.southWestLat,
           },
+        },
+      };
+    case ActionTypes.UPDATE_GEOMETRIES:
+      return {
+        ...state,
+        geometries: action.geometries,
+        margedGeometries: {
+          type: "FeatureCollection",
+          features:action.margedGeometries,
+        },
+      };
+    case ActionTypes.GET_TUPLES:
+      return {
+        ...state,
+        tuples: action.tuples,
+        max: action.max,
+        margedGeometries: {
+          type: "FeatureCollection",
+          features:action.geometries,
         },
       };
     default:

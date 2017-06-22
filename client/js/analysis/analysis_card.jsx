@@ -6,7 +6,6 @@ import getMuiTheme from 'material-ui/styles/getMuiTheme';
 import MuiThemeProvider from 'material-ui/styles/MuiThemeProvider';
 
 import DataTable from './data_table.jsx';
-import DataMap from './data_map.jsx';
 import AnalysisMapCard from './analysis_map_card.jsx';
 import * as actions from '../actions/data.jsx';
 
