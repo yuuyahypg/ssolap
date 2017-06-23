@@ -4,3 +4,6 @@
 /ssolap
 /sensorbee
 /olap/server.go
+.DS_Store
+/server/bindata.go
+/proto
