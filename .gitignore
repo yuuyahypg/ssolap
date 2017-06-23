@@ -4,3 +4,4 @@
 bindata.go
 /ssolap
 /sensorbee
+/olap/server.go
