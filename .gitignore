@@ -1,7 +1,6 @@
 /config
 /node_modules
 /.eslintrc.json
-bindata.go
 /ssolap
 /sensorbee
 /olap/server.go
