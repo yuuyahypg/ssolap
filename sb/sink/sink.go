@@ -13,7 +13,6 @@ import (
 
 type Sink struct {
     server *server.Server
-    count int
 }
 
 func (s *Sink) Write(ctx *core.Context, t *core.Tuple) error {
@@ -35,6 +34,5 @@ func Create(ctx *core.Context, ioParams *bql.IOParams, params data.Map) (core.Si
     fmt.Println("success create server")
     return &Sink{
         server: s,
-        count: 0,
     }, nil
 }

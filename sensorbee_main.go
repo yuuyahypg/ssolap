@@ -1,7 +1,7 @@
 package main
 
 import (
-	_ "github.com/yuuyahypg/ssolap/peopleFlow/plugin"
+	_ "github.com/yuuyahypg/ssolap/sender/peopleFlow/plugin"
 	_ "gopkg.in/sensorbee/sensorbee.v0/bql/udf/builtin"
 	"gopkg.in/sensorbee/sensorbee.v0/cmd/lib/run"
 	"gopkg.in/sensorbee/sensorbee.v0/cmd/lib/runfile"

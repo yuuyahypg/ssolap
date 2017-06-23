@@ -25,8 +25,8 @@ import (
 type StarSchema struct {
     dimensionTypes map[string]string
     dimensionTables map[string]*DimensionTable
+    measures map[string]string
     temporalDimension []interface{}
-    aggFunc string
     geoCoder *GeoCoder
 }
 
@@ -39,12 +39,13 @@ const layoutMinute = "2006/01/02 15:04"
 const layoutHour = "2006/01/02 15"
 
 // create star schema from dimension.json
-func NewStarSchema(js *simplejson.Json) (*StarSchema, error) {
+func NewStarSchema(js *simplejson.Json, topology string) (*StarSchema, error) {
     dimensionTypes := map[string]string{}
     dimensionTables := map[string]*DimensionTable{}
+    measures := map[string]string{}
     temporalDimension := []interface{}{}
-    var aggFunc string
     var geoCoder *GeoCoder
+
     dimensions, err := js.Get("dimensions").Array()
     if err != nil {
         panic(err)
@@ -58,39 +59,59 @@ func NewStarSchema(js *simplejson.Json) (*StarSchema, error) {
             switch dimension["type"].(string) {
             case "normal":
                 dimensionTypes[name] = "normal"
-                dimensionTables[name] = createDimensionMap(dimension)
+                dimensionTables[name] = createDimensionMap(dimension, topology)
             case "spatial":
                 dimensionTypes[name] = "spatial"
-                geoCoder, _ = ConnectDB()
+                geoCoder, _ = ConnectDB(topology)
             case "temporal":
                 dimensionTypes[name] = "temporal"
-                temporalDimension = dimension["levels"].([]interface{})
-            case "measure":
-                dimensionTypes[name] = "measure"
-                aggFunc = dimension["func"].(string)
+                temporalDimension = dimension["outputs"].([]interface{})
             }
+        }
+    }
+
+    fact, err := js.Get("fact").Map()
+    if err != nil {
+        panic(err)
+    }
+
+    ms, isArray := fact["measures"].([]interface{})
+    if isArray == false {
+        panic("missing dimensions.json")
+    }
+
+    for _, m := range ms {
+        if measure, isMap := m.(map[string]interface{}); isMap != false {
+            measures[measure["name"].(string)] = measure["type"].(string)
         }
     }
 
     return &StarSchema{
         dimensionTypes: dimensionTypes,
         dimensionTables: dimensionTables,
+        measures: measures,
         temporalDimension: temporalDimension,
-        aggFunc: aggFunc,
         geoCoder: geoCoder,
     }, nil
 }
 
 // create dimension tables from csv file
-func createDimensionMap(dimension map[string]interface{}) *DimensionTable {
+func createDimensionMap(dimension map[string]interface{}, topology string) *DimensionTable {
     dimensionMap := map[string]map[string]string{}
-    levels := dimension["levels"].([]interface{})
-    length := len(levels)
+    var inputIndex int
+
+    for i, column := range dimension["csv"].([]interface{}) {
+        if column.(string) == dimension["input"].(string) {
+            inputIndex = i
+        }
+    }
+
+    picks := pick(dimension["outputs"].([]interface{}), dimension["csv"].([]interface{}))
 
     // df, err := os.Open("./config/dimensionLevels/" + dimension["name"].(string) + ".csv")
-    df, err := os.Open("./config/dimensionTables/" + dimension["name"].(string) + ".csv")
+    df, err := os.Open("./config/" + topology + "/dimensionTables/" + dimension["name"].(string) + ".csv")
     if err != nil {
-        fmt.Println("not exist dimension level file")
+        fmt.Println("not exist dimension table file")
         panic(err)
     }
 
@@ -105,18 +126,30 @@ func createDimensionMap(dimension map[string]interface{}) *DimensionTable {
 
         columns := map[string]string{}
 
-        for i := 0; i < length; i++ {
-            //columns[levels[i].(string)] = record[i]
-            columns[levels[0].(string)] = record[1]
+        for column, i := range picks {
+            columns[column] = record[i]
         }
 
-        dimensionMap[record[0]] = columns
+        dimensionMap[record[inputIndex]] = columns
     }
     df.Close()
-    
+
     return &DimensionTable{
         table: dimensionMap,
     }
+}
+
+func pick(outputs []interface{}, csv []interface{}) map[string]int {
+    picks := map[string]int{}
+    for i, column := range csv {
+        for _, output := range outputs {
+            if column == output {
+                picks[output.(string)] = i
+                break
+            }
+        }
+    }
+    return picks
 }
 
 func (s *StarSchema) JoinDimensions(tuple *core.Tuple) (*data.Map, error) {
@@ -163,11 +196,11 @@ func (s *StarSchema) JoinDimensions(tuple *core.Tuple) (*data.Map, error) {
                 }
             }
             newTuple[k] = t
-        case "measure":
-            if s.aggFunc != "count" {
-                newTuple[k] = tuple.Data[k]
-            }
         }
+    }
+
+    for k, _ := range s.measures {
+        newTuple[k] = tuple.Data[k]
     }
 
     return &newTuple, nil

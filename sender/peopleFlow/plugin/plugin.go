@@ -4,7 +4,7 @@ import (
     "gopkg.in/sensorbee/sensorbee.v0/bql"
     "gopkg.in/sensorbee/sensorbee.v0/bql/udf"
 
-    "github.com/yuuyahypg/ssolap/peopleFlow/sender"
+    "github.com/yuuyahypg/ssolap/sender/peopleFlow/sender"
     "github.com/yuuyahypg/ssolap/sb/newStreamGenerate"
     "github.com/yuuyahypg/ssolap/sb/sink"
 )

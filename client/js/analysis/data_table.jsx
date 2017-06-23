@@ -19,6 +19,13 @@ class DataTable extends React.Component {
             );
           })
         }
+        {
+          this.props.measures.map((measure) => {
+            return (
+              <TableHeaderColumn key={ `header-${measure.name}` }>{ measure.name }</TableHeaderColumn>
+            );
+          })
+        }
         <TableHeaderColumn>count</TableHeaderColumn>
       </TableRow>
     );
@@ -33,6 +40,15 @@ class DataTable extends React.Component {
               <TableRowColumn key={ `row-${key}-${column}` }>{ value[column] }</TableRowColumn>
             ) : (
               <TableRowColumn key={ `row-${key}-${column}` }></TableRowColumn>
+            );
+          })
+        }
+        {
+          this.props.measures.map((measure) => {
+            return value[measure.name] ? (
+              <TableRowColumn key={ `row-${key}-${measure.name}` }>{ value[measure.name] }</TableRowColumn>
+            ) : (
+              <TableRowColumn key={ `row-${key}-${measure.name}` }></TableRowColumn>
             );
           })
         }
@@ -51,7 +67,7 @@ class DataTable extends React.Component {
           <TableBody>
             {
               this.props.tuples.map((value, key) => {
-                if (key < 100) {
+                if (key < 20) {
                   return this.renderRow(value, key);
                 }
                 return null;
@@ -69,7 +85,8 @@ DataTable.propTypes = {};
 function mapStateToProps(state) {
   const { dimensions, data } = state;
   return {
-    columns: dimensions.fact.column,
+    columns: dimensions.columns,
+    measures: dimensions.fact.measures,
     tuples: data.tuples,
   };
 }

@@ -2,6 +2,7 @@ package conf
 
 import (
     "github.com/BurntSushi/toml"
+    //"fmt"
 )
 
 type Conf struct {
@@ -15,13 +16,13 @@ type OlapConfig struct {
     Ioi int `toml:"ioi"`
 }
 
-func NewConf() *Conf {
-    vertices := NewVertices()
-    dimensionsInfo := NewDimensionsInfo()
+func NewConf(topology string) *Conf {
+    vertices := NewVertices(topology)
+    dimensionsInfo := NewDimensionsInfo(topology)
     registeredQuery := NewRegisteredQuery(vertices, dimensionsInfo)
 
     var config Conf
-    _, err := toml.DecodeFile("./config/olapConfig.toml", &config)
+    _, err := toml.DecodeFile("./config/" + topology + "/config.toml", &config)
     if err != nil {
         panic(err)
     }

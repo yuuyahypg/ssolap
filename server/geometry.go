@@ -2,7 +2,6 @@ package server
 
 import (
     "github.com/paulmach/go.geojson"
-    "github.com/BurntSushi/toml"
     _ "github.com/lib/pq"
     "database/sql"
     //"fmt"
@@ -15,23 +14,7 @@ type GeoDB struct {
     statePrefecture *sql.Stmt
 }
 
-type Config struct {
-    Database DbConfig
-}
-
-type DbConfig struct {
-    User string `toml:"user"`
-    Name string `toml:"name"`
-    Pass string `toml:"pass"`
-}
-
-func ConnectDB() (*GeoDB, error) {
-    var config Config
-    _, err := toml.DecodeFile("./config/dbConfig.toml", &config)
-    if err != nil {
-        panic(err)
-    }
-
+func ConnectDB(config Config) (*GeoDB, error) {
     db, err := sql.Open("postgres", "user=" + config.Database.User + " dbname=" + config.Database.Name + " password=" + config.Database.Pass + " sslmode=disable")
     if err != nil {
         panic(err)

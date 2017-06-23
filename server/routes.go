@@ -5,6 +5,7 @@ import (
     "bytes"
     "github.com/gin-gonic/gin"
     "github.com/bitly/go-simplejson"
+    "github.com/BurntSushi/toml"
 
     "github.com/yuuyahypg/ssolap/olap/conf"
   	"github.com/yuuyahypg/ssolap/olap/buffer"
@@ -13,8 +14,25 @@ import (
     //"fmt"
 )
 
-func SetRoutes(e *gin.Engine, conf *conf.Conf, buf *buffer.RegisteredBuffer) {
-    dimensionFile, err := Asset("config/dimensions.json")
+type Config struct {
+    Database DbConfig
+}
+
+type DbConfig struct {
+    Use bool `toml:"use"`
+    User string `toml:"user"`
+    Name string `toml:"name"`
+    Pass string `toml:"pass"`
+}
+
+func SetRoutes(e *gin.Engine, conf *conf.Conf, buf *buffer.RegisteredBuffer, topology string) {
+    dimensionFile, err := Asset("config/" + topology + "/dimensions.json")
+    if err != nil {
+        panic(err)
+    }
+
+    var config Config
+    _, err = toml.DecodeFile("./config/" + topology + "/config.toml", &config)
     if err != nil {
         panic(err)
     }
@@ -23,12 +41,15 @@ func SetRoutes(e *gin.Engine, conf *conf.Conf, buf *buffer.RegisteredBuffer) {
     if err != nil {
         panic(err)
     }
-    SetApiDimensions(e, js)
+    SetApiDimensions(e, js, config.Database.Use)
     SetApiRequest(e, js, conf, buf)
-    SetApiGeometry(e)
+
+    if config.Database.Use {
+      SetApiGeometry(e, config)
+    }
 }
 
-func SetApiDimensions(e *gin.Engine, js *simplejson.Json) {
+func SetApiDimensions(e *gin.Engine, js *simplejson.Json, isDBConnected bool) {
   dimensions, err := js.Get("dimensions").Array()
   if err != nil {
       panic(err)
@@ -43,40 +64,45 @@ func SetApiDimensions(e *gin.Engine, js *simplejson.Json) {
       c.JSON(200, gin.H{
           "dimensions": dimensions,
           "fact": fact,
+          "isDBConnected": isDBConnected,
       })
   })
 }
 
 func SetApiRequest(e *gin.Engine, js *simplejson.Json, conf *conf.Conf, buf *buffer.RegisteredBuffer) {
-  fact, err := js.Get("fact").Map()
-  if err != nil {
-      panic(err)
-  }
+    dimensions := []string{}
+    dimensionsJson, err := js.Get("dimensions").Array()
+    if err != nil {
+        panic(err)
+    }
 
-  dimensions, _ := fact["dimensions"].([]interface{})
+    for _, v := range dimensionsJson {
+        if dimensionJson, isMap := v.(map[string]interface{}); isMap != false {
+            dimensions = append(dimensions, dimensionJson["name"].(string))
+        }
+    }
 
-  e.GET("/api/request", func(c *gin.Context) {
-      query := bytes.Buffer{}
-      for _, dimension := range dimensions {
-          ds, _ := dimension.(string)
-          query.WriteString(c.Query(ds))
-          query.WriteString(";")
-      }
+    e.GET("/api/request", func(c *gin.Context) {
+        query := bytes.Buffer{}
+        for _, dimension := range dimensions {
+            query.WriteString(c.Query(dimension))
+            query.WriteString(";")
+        }
 
-      ob := buf.GetResult(query.String(), conf)
-      result := []map[string]interface{}{}
-      for _, tuple := range ob.Buffer {
-        result = append(result, tuple)
-      }
+        ob := buf.GetResult(query.String(), conf)
+        result := []map[string]interface{}{}
+        for _, tuple := range ob.Buffer {
+          result = append(result, tuple)
+        }
 
-      c.JSON(200, gin.H{
-          "tuples": result,
-      })
-  })
+        c.JSON(200, gin.H{
+            "tuples": result,
+        })
+    })
 }
 
-func SetApiGeometry(e *gin.Engine) {
-  db, _ := ConnectDB()
+func SetApiGeometry(e *gin.Engine, config Config) {
+  db, _ := ConnectDB(config)
   e.GET("/api/geometry", func(c *gin.Context) {
       southWestLon, _ := strconv.ParseFloat(c.Query("southWestLon"), 64)
       southWestLat, _ := strconv.ParseFloat(c.Query("southWestLat"), 64)

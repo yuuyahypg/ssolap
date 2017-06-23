@@ -29,6 +29,7 @@ type Config struct {
 }
 
 type DbConfig struct {
+    Use bool `toml:"use"`
     User string `toml:"user"`
     Name string `toml:"name"`
     Pass string `toml:"pass"`
@@ -39,9 +40,9 @@ type CacheConfig struct {
     Distance float64 `toml:"distance"`
 }
 
-func ConnectDB() (*GeoCoder, error) {
+func ConnectDB(topology string) (*GeoCoder, error) {
     var config Config
-    _, err := toml.DecodeFile("./config/dbConfig.toml", &config)
+    _, err := toml.DecodeFile("./config/" + topology + "/config.toml", &config)
     if err != nil {
         panic(err)
     }

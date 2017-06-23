@@ -3,7 +3,7 @@ package server
 import (
 	"log"
 	"os"
-	//"fmt"
+	"fmt"
 
 	"html/template"
 	"net/http"
@@ -15,6 +15,7 @@ import (
 	"github.com/gin-gonic/contrib/static"
 	"github.com/gin-gonic/gin"
 	"github.com/nu7hatch/gouuid"
+	"github.com/BurntSushi/toml"
 
 	"github.com/yuuyahypg/ssolap/olap/conf"
 	"github.com/yuuyahypg/ssolap/olap/buffer"
@@ -50,6 +51,14 @@ type Server struct {
     Buffer *buffer.RegisteredBuffer
 }
 
+type TopologyConfig struct {
+    Topology Tconf
+}
+
+type Tconf struct {
+    Name string `toml:"name"`
+}
+
 func (s *Server) RecieveTuple(tuple *core.Tuple) {
     s.Buffer.AddTuple(tuple)
 }
@@ -59,41 +68,48 @@ func (s *Server) Close() {
 }
 
 func Run() *Server {
-	config := conf.NewConf()
-	buf := buffer.NewRegisteredBuffer(config)
+		var tc TopologyConfig
+		_, err := toml.DecodeFile("./config/topology.toml", &tc)
+		if err != nil {
+				fmt.Println("not exist: ./config/topology.toml")
+				panic(err)
+		}
 
-  r := gin.Default()
-  r.HTMLRender = loadTemplates("react.html")
+		config := conf.NewConf(tc.Topology.Name)
+		buf := buffer.NewRegisteredBuffer(config)
 
-  r.Use(func(c *gin.Context) {
-		id, _ := uuid.NewV4()
-		c.Set("uuid", id)
-	})
+	  r := gin.Default()
+	  r.HTMLRender = loadTemplates("react.html")
 
-  SetRoutes(r, config, buf)
+	  r.Use(func(c *gin.Context) {
+			id, _ := uuid.NewV4()
+			c.Set("uuid", id)
+		})
 
-  react := NewReact(
-		"assets/js/bundle.js",
-		true,
-		r,
-	)
+	  SetRoutes(r, config, buf, tc.Topology.Name)
 
-	r.GET("/", react.Handle)
+	  react := NewReact(
+			"assets/js/bundle.js",
+			true,
+			r,
+		)
 
-  r.Use(static.Serve("/", BinaryFileSystem("assets")))
+		r.GET("/", react.Handle)
 
-	port := os.Getenv("PORT")
-	if len(port) == 0 {
-		port = "3000"
-	}
-	go r.Run(":" + port)
+	  r.Use(static.Serve("/", BinaryFileSystem("assets")))
 
-	server := &Server{
-			Conf: config,
-			Buffer: buf,
-	}
+		port := os.Getenv("PORT")
+		if len(port) == 0 {
+			port = "3000"
+		}
+		go r.Run(":" + port)
 
-	return server
+		server := &Server{
+				Conf: config,
+				Buffer: buf,
+		}
+
+		return server
 }
 
 func loadTemplates(list ...string) multitemplate.Render {

@@ -27,9 +27,13 @@ class AnalysisCard extends React.Component {
           <Tab label="Table" value="table">
             <DataTable/>
           </Tab>
-          <Tab label="Map" value="map">
-            <AnalysisMapCard/>
-          </Tab>
+          {
+            this.props.isDBConnected ? (
+              <Tab label="Map" value="map">
+                <AnalysisMapCard/>
+              </Tab>
+            ) : null
+          }
         </Tabs>
       </MuiThemeProvider>
     );
@@ -39,9 +43,9 @@ class AnalysisCard extends React.Component {
 AnalysisCard.propTypes = {};
 
 function mapStateToProps(state) {
-  const { data } = state;
+  const { dimensions, data } = state;
   return {
-    tuples: data.tuples,
+    isDBConnected: dimensions.isDBConnected,
     tabState: data.tabState,
   };
 }

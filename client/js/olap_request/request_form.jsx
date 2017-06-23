@@ -8,10 +8,11 @@ import getMuiTheme from 'material-ui/styles/getMuiTheme';
 import injectTapEventPlugin from 'react-tap-event-plugin';
 
 class RequestForm extends React.Component {
-  getReferences(dimension, array) {
-    array.push(dimension.name);
-    _.forEach(dimension.references, (value) => {
-      this.getReferences(value, array);
+  getLevels(dimension, array) {
+    _.forEach(dimension.rollUp, (branches) => {
+      _.forEach(branches, (level) => {
+        array.push(level);
+      });
     });
   }
 
@@ -19,15 +20,15 @@ class RequestForm extends React.Component {
     this.props.onSelectMenu(value, e.target.textContent);
   }
 
-  renderField(value, key) {
+  renderField(dimension, key) {
     const array = [];
-    this.getReferences(this.props.rootDimensions[key], array);
+    this.getLevels(dimension, array);
     return (
-      <div key={ `sf-${value}-${key}` }>
+      <div key={ `sf-${dimension.name}-${key}` }>
         <SelectField
-          floatingLabelText={ value }
-          value={ this.props.stateDimensions[value] }
-          onChange={ this.handleOnChange.bind(this, value) }>
+          floatingLabelText={ dimension.name }
+          value={ this.props.stateDimensions[dimension.name] }
+          onChange={ this.handleOnChange.bind(this, dimension.name) }>
           {
             array.map((level, levelKey) => {
               return (
@@ -50,7 +51,7 @@ class RequestForm extends React.Component {
       <MuiThemeProvider muiTheme={ getMuiTheme() }>
         <div>
           {
-            this.props.fact.dimensions ? this.props.fact.dimensions.map((value, key) => this.renderField(value, key)) : null
+            this.props.rootDimensions ? this.props.rootDimensions.map((dimension, key) => this.renderField(dimension, key)) : null
           }
         </div>
       </MuiThemeProvider>

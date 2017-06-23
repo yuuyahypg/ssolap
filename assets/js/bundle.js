@@ -51588,20 +51588,46 @@ var prefix = 'dimensions';
 
 var SET_DIMENSIONS = prefix + '/SET_DIMENSIONS';
 function setDimensions(json) {
+  var stateDimensions = getStateDimensions(json.dimensions);
   return {
     type: SET_DIMENSIONS,
     dimensions: json.dimensions,
     fact: json.fact,
-    stateDimensions: getStateDimensions(json.dimensions, json.fact)
+    isDBConnected: json.isDBConnected,
+    stateDimensions: stateDimensions,
+    columns: getColumns(json.dimensions, stateDimensions)
   };
 }
 
-function getStateDimensions(dimensions, fact) {
+function getStateDimensions(dimensions) {
   var state = {};
-  __WEBPACK_IMPORTED_MODULE_0_lodash___default.a.forEach(fact.dimensions, function (value, key) {
-    state[value] = dimensions[key].name;
+  __WEBPACK_IMPORTED_MODULE_0_lodash___default.a.forEach(dimensions, function (dimension) {
+    state[dimension.name] = dimension.rollUp[0][0];
   });
   return state;
+}
+
+function getColumns(dimensions, stateDimensions) {
+  var columns = [];
+  __WEBPACK_IMPORTED_MODULE_0_lodash___default.a.forEach(dimensions, function (dimension) {
+    if (stateDimensions[dimension.name] !== "none") {
+      var stateLevel = stateDimensions[dimension.name];
+
+      __WEBPACK_IMPORTED_MODULE_0_lodash___default.a.forEach(dimension.rollUp, function (branch) {
+        var f = false;
+        __WEBPACK_IMPORTED_MODULE_0_lodash___default.a.forEach(branch, function (level) {
+          if (level === stateLevel) {
+            f = true;
+          }
+
+          if (f) {
+            columns.push(level);
+          }
+        });
+      });
+    }
+  });
+  return columns;
 }
 
 function fetchDimensions() {
@@ -51617,20 +51643,22 @@ function fetchDimensions() {
 }
 
 var SET_LEVEL = prefix + '/SET_LEVEL';
-function setLevel(dimension, level, state) {
-  var copy = Object.assign({}, state);
-  copy[dimension] = level;
-
+function setLevel(stateDimensions, columns) {
   return {
     type: SET_LEVEL,
-    dimensions: copy
+    stateDimensions: stateDimensions,
+    columns: columns
   };
 }
 
 function selectLevel(dimension, level) {
   return function (dispatch, getState) {
     var state = getState();
-    dispatch(setLevel(dimension, level, state.dimensions.stateDimensions));
+    var copy = Object.assign({}, state.dimensions.stateDimensions);
+    copy[dimension] = level;
+    var columns = getColumns(state.dimensions.rootDimensions, copy);
+
+    dispatch(setLevel(copy, columns));
   };
 }
 
@@ -51866,6 +51894,13 @@ var DataTable = function (_React$Component) {
             value
           );
         }),
+        this.props.measures.map(function (measure) {
+          return __WEBPACK_IMPORTED_MODULE_0_react__["createElement"](
+            __WEBPACK_IMPORTED_MODULE_2_material_ui_Table__["TableHeaderColumn"],
+            { key: 'header-' + measure.name },
+            measure.name
+          );
+        }),
         __WEBPACK_IMPORTED_MODULE_0_react__["createElement"](
           __WEBPACK_IMPORTED_MODULE_2_material_ui_Table__["TableHeaderColumn"],
           null,
@@ -51885,6 +51920,13 @@ var DataTable = function (_React$Component) {
             { key: 'row-' + key + '-' + column },
             value[column]
           ) : __WEBPACK_IMPORTED_MODULE_0_react__["createElement"](__WEBPACK_IMPORTED_MODULE_2_material_ui_Table__["TableRowColumn"], { key: 'row-' + key + '-' + column });
+        }),
+        this.props.measures.map(function (measure) {
+          return value[measure.name] ? __WEBPACK_IMPORTED_MODULE_0_react__["createElement"](
+            __WEBPACK_IMPORTED_MODULE_2_material_ui_Table__["TableRowColumn"],
+            { key: 'row-' + key + '-' + measure.name },
+            value[measure.name]
+          ) : __WEBPACK_IMPORTED_MODULE_0_react__["createElement"](__WEBPACK_IMPORTED_MODULE_2_material_ui_Table__["TableRowColumn"], { key: 'row-' + key + '-' + measure.name });
         }),
         __WEBPACK_IMPORTED_MODULE_0_react__["createElement"](
           __WEBPACK_IMPORTED_MODULE_2_material_ui_Table__["TableRowColumn"],
@@ -51913,7 +51955,7 @@ var DataTable = function (_React$Component) {
             __WEBPACK_IMPORTED_MODULE_2_material_ui_Table__["TableBody"],
             null,
             this.props.tuples.map(function (value, key) {
-              if (key < 100) {
+              if (key < 20) {
                 return _this2.renderRow(value, key);
               }
               return null;
@@ -51934,7 +51976,8 @@ function mapStateToProps(state) {
       data = state.data;
 
   return {
-    columns: dimensions.fact.column,
+    columns: dimensions.columns,
+    measures: dimensions.fact.measures,
     tuples: data.tuples
   };
 }
@@ -66907,11 +66950,11 @@ var AnalysisCard = function (_React$Component) {
             { label: 'Table', value: 'table' },
             __WEBPACK_IMPORTED_MODULE_0_react__["createElement"](__WEBPACK_IMPORTED_MODULE_6__data_table_jsx__["a" /* default */], null)
           ),
-          __WEBPACK_IMPORTED_MODULE_0_react__["createElement"](
+          this.props.isDBConnected ? __WEBPACK_IMPORTED_MODULE_0_react__["createElement"](
             __WEBPACK_IMPORTED_MODULE_2_material_ui_Tabs__["Tab"],
             { label: 'Map', value: 'map' },
             __WEBPACK_IMPORTED_MODULE_0_react__["createElement"](__WEBPACK_IMPORTED_MODULE_7__analysis_map_card_jsx__["a" /* default */], null)
-          )
+          ) : null
         )
       );
     }
@@ -66923,10 +66966,11 @@ var AnalysisCard = function (_React$Component) {
 AnalysisCard.propTypes = {};
 
 function mapStateToProps(state) {
-  var data = state.data;
+  var dimensions = state.dimensions,
+      data = state.data;
 
   return {
-    tuples: data.tuples,
+    isDBConnected: dimensions.isDBConnected,
     tabState: data.tabState
   };
 }
@@ -67348,13 +67392,12 @@ var RequestForm = function (_React$Component) {
   }
 
   _createClass(RequestForm, [{
-    key: 'getReferences',
-    value: function getReferences(dimension, array) {
-      var _this2 = this;
-
-      array.push(dimension.name);
-      __WEBPACK_IMPORTED_MODULE_2_lodash___default.a.forEach(dimension.references, function (value) {
-        _this2.getReferences(value, array);
+    key: 'getLevels',
+    value: function getLevels(dimension, array) {
+      __WEBPACK_IMPORTED_MODULE_2_lodash___default.a.forEach(dimension.rollUp, function (branches) {
+        __WEBPACK_IMPORTED_MODULE_2_lodash___default.a.forEach(branches, function (level) {
+          array.push(level);
+        });
       });
     }
   }, {
@@ -67364,18 +67407,18 @@ var RequestForm = function (_React$Component) {
     }
   }, {
     key: 'renderField',
-    value: function renderField(value, key) {
+    value: function renderField(dimension, key) {
       var array = [];
-      this.getReferences(this.props.rootDimensions[key], array);
+      this.getLevels(dimension, array);
       return __WEBPACK_IMPORTED_MODULE_0_react__["createElement"](
         'div',
-        { key: 'sf-' + value + '-' + key },
+        { key: 'sf-' + dimension.name + '-' + key },
         __WEBPACK_IMPORTED_MODULE_0_react__["createElement"](
           __WEBPACK_IMPORTED_MODULE_3_material_ui_SelectField___default.a,
           {
-            floatingLabelText: value,
-            value: this.props.stateDimensions[value],
-            onChange: this.handleOnChange.bind(this, value) },
+            floatingLabelText: dimension.name,
+            value: this.props.stateDimensions[dimension.name],
+            onChange: this.handleOnChange.bind(this, dimension.name) },
           array.map(function (level, levelKey) {
             return __WEBPACK_IMPORTED_MODULE_0_react__["createElement"](__WEBPACK_IMPORTED_MODULE_4_material_ui_MenuItem___default.a, {
               key: 'menu-' + level + '-' + levelKey,
@@ -67390,7 +67433,7 @@ var RequestForm = function (_React$Component) {
   }, {
     key: 'render',
     value: function render() {
-      var _this3 = this;
+      var _this2 = this;
 
       return __WEBPACK_IMPORTED_MODULE_0_react__["createElement"](
         __WEBPACK_IMPORTED_MODULE_5_material_ui_styles_MuiThemeProvider___default.a,
@@ -67398,8 +67441,8 @@ var RequestForm = function (_React$Component) {
         __WEBPACK_IMPORTED_MODULE_0_react__["createElement"](
           'div',
           null,
-          this.props.fact.dimensions ? this.props.fact.dimensions.map(function (value, key) {
-            return _this3.renderField(value, key);
+          this.props.rootDimensions ? this.props.rootDimensions.map(function (dimension, key) {
+            return _this2.renderField(dimension, key);
           }) : null
         )
       );
@@ -67571,7 +67614,9 @@ var _extends = Object.assign || function (target) { for (var i = 1; i < argument
 var initialState = {
   rootDimensions: [],
   fact: {},
-  stateDimensions: {}
+  isDBConnected: false,
+  stateDimensions: {},
+  columns: []
 };
 
 var dimensions = function dimensions() {
@@ -67583,11 +67628,14 @@ var dimensions = function dimensions() {
       return _extends({}, state, {
         rootDimensions: action.dimensions,
         fact: action.fact,
-        stateDimensions: action.stateDimensions
+        isDBConnected: action.isDBConnected,
+        stateDimensions: action.stateDimensions,
+        columns: action.columns
       });
     case __WEBPACK_IMPORTED_MODULE_0__actions_dimensions_jsx__["d" /* SET_LEVEL */]:
       return _extends({}, state, {
-        stateDimensions: action.dimensions
+        stateDimensions: action.stateDimensions,
+        columns: action.columns
       });
     default:
       return state;

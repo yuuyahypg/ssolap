@@ -14,12 +14,12 @@ type Vertices struct {
     ReverseMap map[string]int
 }
 
-func NewVertices() *Vertices {
+func NewVertices(topology string) *Vertices {
     vertexMap := []*Vertex{}
     reverseMap := map[string]int{}
 
     //csvファイルから次元の組み合わせの情報を取得
-    df, err := os.Open("./config/verticesConfig.csv")
+    df, err := os.Open("./config/" + topology + "/verticesConfig.csv")
     if err != nil {
         fmt.Println("not exist verticesConfig.csv")
         panic(err)

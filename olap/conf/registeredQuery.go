@@ -2,6 +2,7 @@ package conf
 
 import (
     "strings"
+    //"fmt"
 )
 
 type RegisteredQuery struct {
@@ -17,25 +18,33 @@ func NewRegisteredQuery(vertices *Vertices, dimInfo *DimensionsInfo) *Registered
             query[k] = attribute
         }
     }
+
     return &RegisteredQuery{
         Query: query,
     }
 }
 
 func registQuery(vertex *Vertex, dimInfo *DimensionsInfo) []string {
-    attribute := []string{}
+    attributes := []string{}
     dimensions := strings.Split(vertex.Dimension, ";")
-    for k, v := range dimensions {
-        flag := false
-        for _, level := range dimInfo.DimensionsInfo[k] {
-            if v == level {
-                flag = true
+    for i, dimension := range dimensions[:(len(dimensions) - 1)] {
+        for _, levels := range dimInfo.DimensionsInfo[i] {
+            flag := false
+            for _, level := range levels {
+              if level == dimension {
+                  flag = true
+              }
+
+              if flag {
+                  attributes = append(attributes, level)
+              }
             }
 
             if flag {
-                attribute = append(attribute, level)
+              break
             }
         }
     }
-    return attribute
+
+    return attributes
 }
