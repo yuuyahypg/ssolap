@@ -92,7 +92,7 @@ type SourceGetter struct {
 func (s *SourceGetter) CreateSource(ctx *core.Context, ioParams *bql.IOParams, params data.Map) (core.Source, error) {
     var config Config
     usr, _ := user.Current()
-    _, err := toml.DecodeFile("./config/senderConfig.toml", &config)
+    _, err := toml.DecodeFile("./config/peopleFlow/config.toml", &config)
     if err != nil {
           panic(err)
     }
