@@ -64,7 +64,7 @@ func (s *Server) RecieveTuple(tuple *core.Tuple) {
 }
 
 func (s *Server) Close() {
-    s.Buffer.DeleteSchedule.Stop()
+    //s.Buffer.DeleteSchedule.Stop()
 }
 
 func Run() *Server {

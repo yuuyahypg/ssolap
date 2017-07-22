@@ -37,6 +37,9 @@ type DimensionTable struct {
 var jst = time.FixedZone("Asia/Tokyo", 9*60*60)
 const layoutMinute = "2006/01/02 15:04"
 const layoutHour = "2006/01/02 15"
+const layoutDay = "2006/01/02"
+const layoutMonth = "2006/01"
+const layoutYear = "2006/01"
 
 // create star schema from dimension.json
 func NewStarSchema(js *simplejson.Json, topology string) (*StarSchema, error) {
@@ -54,17 +57,18 @@ func NewStarSchema(js *simplejson.Json, topology string) (*StarSchema, error) {
     // fact tableとdimension tableを結合するために必要な情報を保存する
     for _, v := range dimensions {
         if dimension, isMap := v.(map[string]interface{}); isMap != false {
-            name := dimension["name"].(string)
-
             switch dimension["type"].(string) {
             case "normal":
-                dimensionTypes[name] = "normal"
-                dimensionTables[name] = createDimensionMap(dimension, topology)
+                input := dimension["input"].(string)
+                dimensionTypes[input] = "normal"
+                dimensionTables[input] = createDimensionMap(dimension, topology)
             case "spatial":
+                name := dimension["name"].(string)
                 dimensionTypes[name] = "spatial"
                 geoCoder, _ = ConnectDB(topology)
             case "temporal":
-                dimensionTypes[name] = "temporal"
+                input := dimension["input"].(string)
+                dimensionTypes[input] = "temporal"
                 temporalDimension = dimension["outputs"].([]interface{})
             }
         }
@@ -154,7 +158,6 @@ func pick(outputs []interface{}, csv []interface{}) map[string]int {
 
 func (s *StarSchema) JoinDimensions(tuple *core.Tuple) (*data.Map, error) {
     newTuple := data.Map{}
-
     for k, v := range s.dimensionTypes {
         switch v {
         case "normal":
@@ -181,6 +184,8 @@ func (s *StarSchema) JoinDimensions(tuple *core.Tuple) (*data.Map, error) {
             newTuple["region1"] = data.String(region1)
             newTuple["city"] = data.String(city)
             newTuple["prefecture"] = data.String(prefecture)
+            newTuple["lon"] = tuple.Data["lon"]
+            newTuple["lat"] = tuple.Data["lat"]
 
         case "temporal":
             t, _ := tuple.Data[k]
@@ -193,6 +198,12 @@ func (s *StarSchema) JoinDimensions(tuple *core.Tuple) (*data.Map, error) {
                     newTuple["minute"] = data.String(tsJst.Format(layoutMinute))
                 case "hour":
                     newTuple["hour"] = data.String(tsJst.Format(layoutHour))
+                case "day":
+                    newTuple["day"] = data.String(tsJst.Format(layoutDay))
+                case "month":
+                    newTuple["month"] = data.String(tsJst.Format(layoutMonth))
+                case "year":
+                    newTuple["year"] = data.String(tsJst.Format(layoutYear))
                 }
             }
             newTuple[k] = t

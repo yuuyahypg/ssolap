@@ -7,7 +7,6 @@ import * as actions from '../actions/data.jsx';
 
 class AnalysisMapCard extends React.Component {
   render() {
-    console.log(this.props);
     return (
       <div style={ { marginTop: 10 } }>
         <DataMapValueSelector className="col-xs-3"/>

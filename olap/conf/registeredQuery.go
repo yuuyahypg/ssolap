@@ -28,8 +28,8 @@ func registQuery(vertex *Vertex, dimInfo *DimensionsInfo) []string {
     attributes := []string{}
     dimensions := strings.Split(vertex.Dimension, ";")
     for i, dimension := range dimensions[:(len(dimensions) - 1)] {
+        flag := false
         for _, levels := range dimInfo.DimensionsInfo[i] {
-            flag := false
             for _, level := range levels {
               if level == dimension {
                   flag = true
@@ -38,10 +38,6 @@ func registQuery(vertex *Vertex, dimInfo *DimensionsInfo) []string {
               if flag {
                   attributes = append(attributes, level)
               }
-            }
-
-            if flag {
-              break
             }
         }
     }

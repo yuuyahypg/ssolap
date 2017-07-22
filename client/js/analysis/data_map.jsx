@@ -14,12 +14,14 @@ const chroma = require('chroma-js');
 let Map;
 let TileLayer;
 let GeoJSON;
+let Circle;
 
 class DataMap extends React.Component {
   componentDidMount() {
     Map = require('react-leaflet').Map;
     TileLayer = require('react-leaflet').TileLayer;
     GeoJSON = require('react-leaflet').GeoJSON;
+    Circle = require('react-leaflet').Circle;
     this.forceUpdate(() => {
       const bounds = this.refs.map.leafletElement.getBounds();
       this.props.getGeometry({
@@ -29,6 +31,7 @@ class DataMap extends React.Component {
         northEastLat: bounds._northEast.lat,
         region: this.props.region,
       });
+      this.props.getRoad();
     });
   }
 
@@ -49,13 +52,38 @@ class DataMap extends React.Component {
         key={ `${_.now()}${this.props.geometries.features[0].geometry.coordinates[0][0][0]}` }
         data={ this.props.geometries.features }
         style={ this.style }
-        onEachFeature={ this.onEachFeature }/>
+        onEachFeature={ this.onEachFeature }
+        filter={ this.filter }/>
+    );
+  }
+
+  renderRoad() {
+    return (
+      <GeoJSON
+        key={ `${_.now()}${this.props.road.features[0].geometry.coordinates[0][0][0]}` }
+        data={ this.props.road.features }
+        style={ this.roadStyle } />
+    );
+  }
+
+  renderPoints() {
+    const features = {
+      "type": "Feature",
+      "geometry": {
+        "type": "MultiPoint",
+        "coordinates": this.props.coordinates,
+      },
+    };
+
+    return (
+      <GeoJSON
+        data={ features }/>
     );
   }
 
   style(feature) {
-    const separater = [0, 0.01, 0.02, 0.03, 0.04, 0.05, 0.06, 0.07, 0.08, 0.09, 0.1, 0.15, 0.2, 0.25, 0.3, 0.35, 0.4, 0.45, 0.5, 0.6, 0.7, 0.8, 1];
-    const getColor = chroma.scale(["blue", "aqua", "lime", "green", "yellow", "orange", "orangered", "red"]).classes([0, 0.01, 0.05, 0.1, 0.15, 0.2, 0.3, 0.4, 0.5, 0.7, 1]);
+    const separater = [0, 0.05, 0.1, 0.15, 0.2, 0.25, 0.3, 0.35, 0.4, 0.45, 0.5, 0.55, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9, 0.95, 1];
+    const getColor = chroma.scale(["blue", "aqua", "lime", "green", "yellow", "orange", "orangered", "red"]).classes(separater);
     const color = getColor(feature.properties.propotion).toString();
 
     return {
@@ -63,6 +91,18 @@ class DataMap extends React.Component {
       opacity: 0.5,
       fillOpacity: 0.5,
     };
+  }
+
+  roadStyle(feature) {
+    return {
+      color: "black",
+      opacity: 1,
+      fillOpacity: 1,
+    };
+  }
+
+  pointStyle(feature, latlng) {
+    return  <Circle center={ latlng } radius={ 2 }/>;
   }
 
   onEachFeature(feature, layer) {
@@ -89,7 +129,7 @@ class DataMap extends React.Component {
           (Map) && (TileLayer)
           ? (
             <Map
-              center={ [35.68, 139.7] }
+              center={ [36.084219, 140.114217] }
               zoom={ 13 }
               onMoveend={ this.updateGeometry.bind(this) }
               ref="map"
@@ -98,6 +138,8 @@ class DataMap extends React.Component {
                 url='http://cyberjapandata.gsi.go.jp/xyz/blank/{z}/{x}/{y}.png'
                 attribution='&copy; <a href="http://maps.gsi.go.jp/development/ichiran.html">地理院タイル</a> contributors'/>
               { _.size(this.props.geometries.features) > 0 ? this.renderGeometry() : null }
+              { _.size(this.props.road.features) > 0 ? this.renderRoad() : null }
+              { _.size(this.props.coordinates) > 0 ? this.renderPoints() : null }
             </Map>
           )
           : (null)
@@ -111,14 +153,18 @@ function mapStateToProps(state) {
   const { map, dimensions } = state;
   return {
     geometries: map.margedGeometries,
+    road: map.road,
     bounds: map.bounds,
     region: dimensions.stateDimensions.region,
+    tuples: map.tuples,
+    coordinates: map.coordinates,
   };
 }
 
 function mapDispatchToProps(dispatch) {
   return {
     getGeometry: param => dispatch(actions.fetchSetGeo(param)),
+    getRoad: param => dispatch(actions.fetchSetRoad()),
     updateGeo: param => dispatch(actions.fetchUpdateGeo(param)),
   };
 }

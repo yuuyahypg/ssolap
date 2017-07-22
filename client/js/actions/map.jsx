@@ -23,6 +23,25 @@ export function fetchSetGeo(param) {
   };
 }
 
+export const SET_ROAD = `${prefix}/SET_ROAD`;
+export function setRoad(geojson) {
+  return {
+    type: SET_ROAD,
+    road: geojson,
+  };
+}
+
+export function fetchSetRoad() {
+  return (dispatch) => {
+    return request
+      .get('./api/road')
+      .query()
+      .end((err, res) => {
+        dispatch(setRoad(res.body.geojson));
+      });
+  };
+}
+
 export const UPDATE_GEOMETRIES = `${prefix}/UPDATE_GEOMETRIES`;
 export function updateGeometries(geojson, geometries) {
   return {
@@ -46,12 +65,13 @@ export function fetchUpdateGeo(param) {
 }
 
 export const GET_TUPLES = `${prefix}/GET_TUPLES`;
-export function getTuples(tuples, max, geometries) {
+export function getTuples(tuples, max, geometries, coordinates) {
   return {
     type: GET_TUPLES,
     tuples,
     max,
     geometries,
+    coordinates,
   };
 }
 
@@ -65,8 +85,12 @@ export function fetchGetTuples() {
 
     const info = getMatchTuplesInfo(state.data.tuples, state.data.selectedValue);
     const geometries = getMargedGeometries(state.map.geometries.features, info.tuples, info.max);
-
-    return dispatch(getTuples(info.tuples, info.max, geometries));
+    const coordinates = [];
+    _.forEach(info.tuples, (tuple) => {
+      console.log(tuple);
+      Array.prototype.push.apply(coordinates, tuple.points.features.geometry.coordinates);
+    });
+    return dispatch(getTuples(info.tuples, info.max, geometries, coordinates));
   };
 }
 

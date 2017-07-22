@@ -12,6 +12,7 @@ type GeoDB struct {
     state *sql.Stmt
     stateCity *sql.Stmt
     statePrefecture *sql.Stmt
+    stateRoad *sql.Stmt
 }
 
 func ConnectDB(config Config) (*GeoDB, error) {
@@ -39,11 +40,17 @@ func ConnectDB(config Config) (*GeoDB, error) {
       panic(err)
     }
 
+    stateRoad, err := db.Prepare("SELECT ST_AsGeoJSON(geom) FROM road;")
+    if err != nil {
+      panic(err)
+    }
+
     return &GeoDB{
         db: db,
         state: state,
         stateCity: stateCity,
         statePrefecture: statePrefecture,
+        stateRoad: stateRoad,
     }, nil
 }
 
@@ -182,6 +189,39 @@ func (gc *GeoDB) GetBoundedAreaPrefecture(southWestLon float64, southWestLat flo
           Properties: map[string]string{
             "prefecture": *prefecture,
           },
+        })
+    }
+
+    return &FeatureCollection{
+      Type: "FeatureCollection",
+      Features: features,
+    }
+}
+
+func (gc *GeoDB) GetRoad() (*FeatureCollection) {
+    var features []*Feature
+    row, err := gc.stateRoad.Query()
+    if err != nil {
+        panic(err)
+    }
+    defer row.Close()
+
+    for {
+        ok := row.Next()
+        if !ok {
+            break
+        }
+
+        var geometry *geojson.Geometry
+
+        err := row.Scan(&geometry)
+        if err != nil {
+            panic(err)
+        }
+
+        features = append(features, &Feature{
+          Type: "Feature",
+          Geometry: geometry,
         })
     }
 

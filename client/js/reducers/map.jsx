@@ -3,6 +3,7 @@ import * as ActionTypes from '../actions/map.jsx';
 const initialState = {
   geometries: {},
   margedGeometries: {},
+  road: {},
   bounds: {
     northEast: {
       lon: 0,
@@ -14,6 +15,7 @@ const initialState = {
     },
   },
   tuples: [],
+  coordinates: [],
   max: 0,
 };
 
@@ -34,6 +36,11 @@ const map = (state = initialState, action) => {
           },
         },
       };
+    case ActionTypes.SET_ROAD:
+      return {
+        ...state,
+        road: action.road,
+      };
     case ActionTypes.UPDATE_GEOMETRIES:
       return {
         ...state,
@@ -52,6 +59,7 @@ const map = (state = initialState, action) => {
           type: "FeatureCollection",
           features:action.geometries,
         },
+        coordinates: action.coordinates,
       };
     default:
       return state;

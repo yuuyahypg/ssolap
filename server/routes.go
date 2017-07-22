@@ -11,7 +11,7 @@ import (
   	"github.com/yuuyahypg/ssolap/olap/buffer"
 
     //"io/ioutil"
-    //"fmt"
+    "fmt"
 )
 
 type Config struct {
@@ -43,9 +43,12 @@ func SetRoutes(e *gin.Engine, conf *conf.Conf, buf *buffer.RegisteredBuffer, top
     }
     SetApiDimensions(e, js, config.Database.Use)
     SetApiRequest(e, js, conf, buf)
+    SetApiAutoUpdate(e, js, conf, buf)
 
     if config.Database.Use {
-      SetApiGeometry(e, config)
+      db, _ := ConnectDB(config)
+      SetApiGeometry(e, db)
+      SetApiRoad(e, db)
     }
 }
 
@@ -101,8 +104,7 @@ func SetApiRequest(e *gin.Engine, js *simplejson.Json, conf *conf.Conf, buf *buf
     })
 }
 
-func SetApiGeometry(e *gin.Engine, config Config) {
-  db, _ := ConnectDB(config)
+func SetApiGeometry(e *gin.Engine, db *GeoDB) {
   e.GET("/api/geometry", func(c *gin.Context) {
       southWestLon, _ := strconv.ParseFloat(c.Query("southWestLon"), 64)
       southWestLat, _ := strconv.ParseFloat(c.Query("southWestLat"), 64)
@@ -118,6 +120,22 @@ func SetApiGeometry(e *gin.Engine, config Config) {
         geo = db.GetBoundedAreaPrefecture(southWestLon, southWestLat, northEastLon, northEastLat)
       }
 
+
+      c.JSON(200, gin.H{
+          "geojson": geo,
+      })
+  })
+}
+
+func SetApiAutoUpdate(e *gin.Engine, js *simplejson.Json, conf *conf.Conf, buf *buffer.RegisteredBuffer) {
+  e.GET("/api/autoUpdate", func(c *gin.Context) {
+      fmt.Println(c.Accepted)
+  })
+}
+
+func SetApiRoad(e *gin.Engine, db *GeoDB) {
+  e.GET("/api/road", func(c *gin.Context) {
+      geo := db.GetRoad()
 
       c.JSON(200, gin.H{
           "geojson": geo,

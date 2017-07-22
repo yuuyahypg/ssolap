@@ -10,17 +10,26 @@ import (
 type DimensionsInfo struct {
     DimensionsInfo [][][]string
     Measures []map[string]string
+    TemporalInput string
+    TemporalUnit string
 }
 
 func NewDimensionsInfo(topology string) *DimensionsInfo {
     dimensionsInfo := [][][]string{}
     measures := []map[string]string{}
     dimensions, fact := getDimensionsFromJson(topology)
+    var input string
+    var unit string
 
     for _, v := range dimensions {
         if dimension, isMap := v.(map[string]interface{}); isMap != false {
             levels := dimension["rollUp"].([]interface{})
             dimensionsInfo = append(dimensionsInfo, newDimensionInfo(levels))
+            if dimType := dimension["type"].(string); dimType == "temporal" {
+                input = dimension["input"].(string)
+                first := levels[0].([]interface{})
+                unit = first[0].(string)
+            }
             //if dimType := dimension["type"].(string); dimType != "measure" {
                 //levels := dimension["levels"].([]interface{})
                 //dimensionsInfo = append(dimensionsInfo, newDimensionInfo(levels))
@@ -50,6 +59,8 @@ func NewDimensionsInfo(topology string) *DimensionsInfo {
     return &DimensionsInfo{
         DimensionsInfo: dimensionsInfo,
         Measures: measures,
+        TemporalInput: input,
+        TemporalUnit: unit,
     }
 }
 

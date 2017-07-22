@@ -5,6 +5,7 @@ import (
 
     "bytes"
     "strings"
+    "fmt"
 )
 
 type OndemandBuffer struct {
@@ -70,9 +71,11 @@ func (buf *OndemandBuffer) ondemandQuery(rb *RegisteredBuffer, ref int, queryStr
             dimString := bytes.Buffer{}
             value := map[string]interface{}{}
             for _, attribute := range query {
-                dimString.WriteString(data[attribute].(string))
-                dimString.WriteString(";")
-                value[attribute] = data[attribute]
+                if attribute != "none" {
+                    dimString.WriteString(data[attribute].(string))
+                    dimString.WriteString(";")
+                    value[attribute] = data[attribute]
+                }
             }
 
             if v, ok := buf.Buffer[dimString.String()]; ok {
@@ -86,12 +89,28 @@ func (buf *OndemandBuffer) ondemandQuery(rb *RegisteredBuffer, ref int, queryStr
                 }
 
                 v["count"] = v["count"].(int) + data["count"].(int)
+
+                //if p, exist := v["points"]; exist{
+                    //points := p.(map[string]interface{})
+                    //features := points["features"].(map[string]interface{})
+                    //geometry := features["geometry"].(map[string]interface{})
+                    //coordinates := geometry["coordinates"].([][]float64)
+
+                    //dpoints := data["points"].(map[string]interface{})
+                    //dfeatures := dpoints["features"].(map[string]interface{})
+                    //dgeometry := dfeatures["geometry"].(map[string]interface{})
+                    //dcoordinates := dgeometry["coordinates"].([][]float64)
+                    //geometry["coordinates"] = append(coordinates, dcoordinates...)
+                //}
             } else {
                 for _, measure := range rb.Measures.Measures {
                     value[measure["name"]] = data[measure["name"]]
                 }
 
                 value["count"] = data["count"]
+                //if points, exist := data["points"]; exist{
+                    //value["points"] = points
+                //}
                 buf.Buffer[dimString.String()] = value
             }
         }
